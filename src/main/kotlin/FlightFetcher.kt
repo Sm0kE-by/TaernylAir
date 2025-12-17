@@ -11,22 +11,22 @@ private const val BASE_URL = "http://localhost:8080/2e"
 private const val FLIGHT_ENDPOINT = "$BASE_URL/flight"
 private const val LOYALTY_ENDPOINT = "$BASE_URL/loyalty"
 
-fun main() {
-
-    //Функция runBlocking — строитель сопрограммы, который блокирует свой поток до того момента, пока выполнение
-    //сопрограммы не завершится. Функцию runBlocking используют для запуска сопрограмм, которые все должны завершиться до
-    //возобновления работы.
-    runBlocking {
-        println("Started")
-        //launch - Строитель сопрограммы — функция, создающая новую сопрограмму
-        launch {
-            val flight = fetchFlight("Madrigal")
-            println(flight)
-        }
-        println("Finished")
-    }
-
-}
+//fun main() {
+//
+//    //Функция runBlocking — строитель сопрограммы, который блокирует свой поток до того момента, пока выполнение
+//    //сопрограммы не завершится. Функцию runBlocking используют для запуска сопрограмм, которые все должны завершиться до
+//    //возобновления работы.
+//    runBlocking {
+//        println("Started")
+//        //launch - Строитель сопрограммы — функция, создающая новую сопрограмму
+//        launch {
+//            val flight = fetchFlight("Madrigal")
+//            println(flight)
+//        }
+//        println("Finished")
+//    }
+//
+//}
 
 suspend fun fetchFlight(passengerName: String): FlightStatus = coroutineScope {
     //Также можно удалить вызов withContext, потому что Ktor автоматически перемещает сетевой запрос в фоновый поток и

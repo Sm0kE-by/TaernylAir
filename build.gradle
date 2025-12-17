@@ -8,7 +8,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '2.0.0'
 }
 
-apply plugin: 'kotlinx-atomicfu'
+//apply plugin = 'kotlinx-atomicfu'
 group = 'org.example'
 version = '1.0-SNAPSHOT'
 
