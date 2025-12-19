@@ -1,9 +1,11 @@
 package org.example
 
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.toList
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.launch
 import org.example.BoardingState.*
 
 val bannedPassengers = setOf("Nogartse")
@@ -69,19 +71,48 @@ suspend fun watchFlight(initialFlight: FlightStatus) {
         .map { flight ->
             when (flight.boardingStatus) {
                 FlightCanceled -> "Your flight was canceled"
-                    BoardingNotStarted -> "Boarding will start soon"
-                        WaitingToBoard -> "Other passengers are boarding"
-                        Boarding -> "You can now board the plane"
-                    BoardingEnded -> "The boarding doors have closed"
+                BoardingNotStarted -> "Boarding will start soon"
+                WaitingToBoard -> "Other passengers are boarding"
+                Boarding -> "You can now board the plane"
+                BoardingEnded -> "The boarding doors have closed"
             } + " (Flight departs in ${flight.departureTimeInMinutes} minutes)"
         }
         .onCompletion {
             println("Finished tracking $passengerName's flight")
         }
-        .collect {status ->
+        .collect { status ->
             println("$passengerName: $status")
         }
 }
 
-suspend fun fetchFlights(passengerNames: List<String> = listOf("Madrigal", "Polarcubis")) =
-    passengerNames.map { fetchFlight(it) }
+suspend fun fetchFlights(
+    passengerNames: List<String> = listOf("Madrigal", "Polarcubis", "Estragon", "Taernyl"),
+    numberOfWorkers: Int = 2
+): List<FlightStatus> =
+    coroutineScope {
+        val passengerNamesChannel = Channel<String>()
+        val fetchedFlightsChannel = Channel<FlightStatus>()
+        launch {
+            passengerNames.forEach {
+                passengerNamesChannel.send(it)
+            }
+            passengerNamesChannel.close()
+        }
+        launch {
+            (1..numberOfWorkers).map {
+                launch {
+                    fetchFlightStatuses(passengerNamesChannel, fetchedFlightsChannel)
+                }
+            }.joinAll()
+            fetchedFlightsChannel.close()
+        }
+        fetchedFlightsChannel.toList()
+    }
+
+suspend fun fetchFlightStatuses(fetchChannel: ReceiveChannel<String>, resultChannel: SendChannel<FlightStatus>) {
+    for (passengerName in fetchChannel) {
+        val flight = fetchFlight(passengerName)
+        println("Fetched flight: $flight")
+        resultChannel.send(flight)
+    }
+}
